@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ghumle/contracts": ["packages/contracts/src/index.ts"],
+      "@ghumle/design-tokens": ["packages/design-tokens/src/index.ts"],
+      "@ghumle/ui": ["packages/ui/src/index.ts"]
+    }
+  }
+}

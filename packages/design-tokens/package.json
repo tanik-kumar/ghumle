@@ -1,0 +1,15 @@
+{
+  "name": "@ghumle/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --watch --format esm,cjs --dts",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"console.log('No tests configured for @ghumle/design-tokens')\""
+  }
+}

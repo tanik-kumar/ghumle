@@ -1,0 +1,379 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TripScope {
+  DOMESTIC
+  INTERNATIONAL
+}
+
+enum TripStatus {
+  DRAFT
+  SAVED
+  CONFIRMED
+  ARCHIVED
+}
+
+enum ItineraryPace {
+  RELAXED
+  BALANCED
+  PACKED
+}
+
+enum Visibility {
+  PRIVATE
+  MATCHABLE
+  PUBLIC
+}
+
+enum MatchRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum SavingsGoalStatus {
+  ACTIVE
+  ACHIEVED
+  PAUSED
+  ARCHIVED
+}
+
+enum NotificationType {
+  SYSTEM
+  ALERT
+  MATCH
+  ADMIN
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id                    String               @id @default(cuid())
+  email                 String               @unique
+  passwordHash          String?
+  refreshTokenHash      String?
+  role                  Role                 @default(USER)
+  isActive              Boolean              @default(true)
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  profile               UserProfile?
+  tripPlans             TripPlan[]
+  budgetPreferences     BudgetPreference[]
+  savingsGoals          SavingsGoal[]
+  wishlistItems         WishlistItem[]
+  matchProfile          TravelMatchProfile?
+  sentMatchRequests     MatchRequest[]       @relation("MatchRequestRequester")
+  receivedMatchRequests MatchRequest[]       @relation("MatchRequestRecipient")
+  notifications         Notification[]
+  reviews               Review[]
+  auditLogs             AuditLog[]
+  adminUser             AdminUser?
+  reportsFiled          ReportAbuse[]        @relation("ReportFiledBy")
+  reportsAgainst        ReportAbuse[]        @relation("ReportAgainstUser")
+}
+
+model UserProfile {
+  id                     String     @id @default(cuid())
+  userId                 String     @unique
+  fullName               String
+  avatarUrl              String?
+  baseCurrency           String     @default("INR")
+  countryCode            String?
+  timezone               String     @default("Asia/Kolkata")
+  preferredTravelStyles  String[]
+  privacyLevel           Visibility @default(PRIVATE)
+  isTravelPartnerVisible Boolean    @default(false)
+  bio                    String?
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  user                   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Destination {
+  id                     String                    @id @default(cuid())
+  slug                   String                    @unique
+  name                   String
+  country                String
+  countryCode            String
+  region                 String
+  summary                String
+  heroImage              String
+  currency               String
+  averageDailyBudget     Int
+  popularityScore        Int
+  convenienceScore       Int
+  safetyScore            Int
+  familyScore            Int
+  coupleScore            Int
+  bestMonths             Int[]
+  bestTimeToVisit        String
+  recommendedDurationMin Int
+  recommendedDurationMax Int
+  visaNote               String
+  safetyNote             String
+  tags                   String[]
+  topAttractions         Json
+  hotelAreas             Json
+  foodSuggestions        Json
+  activitySuggestions    Json
+  scope                  TripScope
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
+  categoryLinks          DestinationCategoryLink[]
+  priceEstimates         PriceEstimate[]
+  tripPlans              TripPlan[]
+  wishlistItems          WishlistItem[]
+  reviews                Review[]
+  matchRequests          MatchRequest[]
+}
+
+model DestinationCategory {
+  id           String                    @id @default(cuid())
+  slug         String                    @unique
+  name         String
+  description  String?
+  destinations DestinationCategoryLink[]
+}
+
+model DestinationCategoryLink {
+  destinationId String
+  categoryId    String
+  destination   Destination         @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  category      DestinationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([destinationId, categoryId])
+}
+
+model PriceEstimate {
+  id            String      @id @default(cuid())
+  destinationId String
+  mode          String
+  minPrice      Int
+  maxPrice      Int
+  note          String
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+}
+
+model BudgetPreference {
+  id             String     @id @default(cuid())
+  userId         String
+  tripPlanId     String?    @unique
+  totalBudget    Int
+  travelers      Int
+  durationDays   Int
+  preferredMonth Int
+  scope          TripScope
+  countryCode    String?
+  placeTypes     String[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tripPlan       TripPlan?  @relation(fields: [tripPlanId], references: [id], onDelete: SetNull)
+}
+
+model TripPlan {
+  id                 String            @id @default(cuid())
+  userId             String
+  destinationId      String?
+  title              String
+  status             TripStatus        @default(DRAFT)
+  totalBudget        Int?
+  totalEstimatedCost Int?
+  travelers          Int?
+  travelMonth        Int?
+  travelYear         Int?
+  coverImage         String?
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination        Destination?      @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+  budgetPreference   BudgetPreference?
+  itinerary          Itinerary?
+  wishlistItem       WishlistItem?
+  savingsGoals       SavingsGoal[]
+}
+
+model Itinerary {
+  id          String        @id @default(cuid())
+  tripPlanId  String        @unique
+  pace        ItineraryPace
+  hotelArea   String?
+  summary     String?
+  exportToken String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  tripPlan    TripPlan      @relation(fields: [tripPlanId], references: [id], onDelete: Cascade)
+  days        ItineraryDay[]
+}
+
+model ItineraryDay {
+  id                String    @id @default(cuid())
+  itineraryId       String
+  dayNumber         Int
+  title             String
+  summary           String?
+  localTravelMinutes Int
+  hotelArea         String?
+  places            Json
+  meals             Json
+  activities        Json
+  notes             String?
+  itinerary         Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+
+  @@unique([itineraryId, dayNumber])
+}
+
+model WishlistItem {
+  id           String      @id @default(cuid())
+  userId       String
+  destinationId String
+  tripPlanId   String?     @unique
+  targetBudget Int?
+  targetMonth  Int?
+  targetYear   Int?
+  note         String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination  Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  tripPlan     TripPlan?   @relation(fields: [tripPlanId], references: [id], onDelete: SetNull)
+}
+
+model SavingsGoal {
+  id           String            @id @default(cuid())
+  userId       String
+  tripPlanId   String?
+  title        String
+  goalAmount   Int
+  savedAmount  Int               @default(0)
+  targetDate   DateTime
+  currency     String            @default("INR")
+  status       SavingsGoalStatus @default(ACTIVE)
+  monthlyTarget Int?
+  recommendation Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tripPlan     TripPlan?         @relation(fields: [tripPlanId], references: [id], onDelete: SetNull)
+  deposits     SavingsDeposit[]
+}
+
+model SavingsDeposit {
+  id          String      @id @default(cuid())
+  goalId       String
+  amount       Int
+  depositDate  DateTime   @default(now())
+  note         String?
+  goal         SavingsGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+}
+
+model TravelMatchProfile {
+  id                      String     @id @default(cuid())
+  userId                  String     @unique
+  visibility              Visibility @default(PRIVATE)
+  lookingForPartner       Boolean    @default(false)
+  destinationIds          String[]
+  minBudget               Int?
+  maxBudget               Int?
+  tripMonth               Int?
+  tripYear                Int?
+  preferredTags           String[]
+  about                   String?
+  safetyAgreementAccepted Boolean    @default(false)
+  reportCount             Int        @default(0)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  user                    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MatchRequest {
+  id           String             @id @default(cuid())
+  requesterId  String
+  recipientId  String
+  destinationId String?
+  message      String?
+  status       MatchRequestStatus @default(PENDING)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  requester    User               @relation("MatchRequestRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  recipient    User               @relation("MatchRequestRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  destination  Destination?       @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+  reports      ReportAbuse[]
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id            String      @id @default(cuid())
+  userId        String
+  destinationId String
+  rating        Int
+  title         String?
+  body          String?
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, destinationId])
+}
+
+model AdminUser {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  permissions String[]
+  lastLoginAt DateTime?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ReportAbuse {
+  id           String       @id @default(cuid())
+  filedById    String
+  againstUserId String?
+  matchRequestId String?
+  reason       String
+  details      String?
+  status       ReportStatus @default(OPEN)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  filedBy      User         @relation("ReportFiledBy", fields: [filedById], references: [id], onDelete: Cascade)
+  againstUser  User?        @relation("ReportAgainstUser", fields: [againstUserId], references: [id], onDelete: SetNull)
+  matchRequest MatchRequest? @relation(fields: [matchRequestId], references: [id], onDelete: SetNull)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
