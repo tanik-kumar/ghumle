@@ -2,8 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { AuditService } from './common/audit/audit.service';
-import { PrismaService } from './common/database/prisma.service';
+import { DatabaseModule } from './common/database/database.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DestinationsModule } from './modules/destinations/destinations.module';
@@ -21,7 +20,9 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', '../../.env'],
     }),
+    DatabaseModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
@@ -41,6 +42,5 @@ import { WishlistModule } from './modules/wishlist/wishlist.module';
     NotificationsModule,
     AdminModule,
   ],
-  providers: [PrismaService, AuditService],
 })
 export class AppModule {}

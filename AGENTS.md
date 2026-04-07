@@ -35,6 +35,8 @@ Ghumle is a TypeScript monorepo for a scalable travel planning platform.
 - Prisma 7 uses `@prisma/adapter-pg`
   - See `apps/api/src/common/database/prisma.service.ts`
   - See `apps/api/prisma.config.ts`
+- The API dev script runs compiled JavaScript from `dist/apps/api/src/main.js`
+  - Do not switch it back to `tsx watch`; `tsx` does not emit the Nest decorator metadata needed for constructor injection
 - The API can start in degraded mode when PostgreSQL is unavailable
   - This is intentional for demo/public flows on machines without Docker or Postgres
 - Full persistence features still need Postgres and Redis running
@@ -117,6 +119,7 @@ Pick from these first if resuming:
 ## Watchouts
 
 - Do not switch the web build scripts back to Turbopack in this environment without revalidating the sandbox behavior
+- Do not switch the API dev script back to `tsx watch`; it breaks Nest dependency injection metadata
 - Do not remove degraded-start behavior from the API unless local DB requirements are made explicit
 - Keep shared product/domain types in `packages/contracts`; do not duplicate them in app-level code
 

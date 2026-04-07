@@ -1,5 +1,9 @@
+import { config as loadEnv } from 'dotenv';
+
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, Role, TripStatus, Visibility } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { Pool } from 'pg';
 
 import {
   adminOverviewMetrics,
@@ -11,7 +15,15 @@ import {
   mockWishlist,
 } from '@ghumle/contracts';
 
-const prisma = new PrismaClient();
+loadEnv({ path: '../../.env', quiet: true });
+loadEnv({ quiet: true });
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL ?? 'postgresql://ghumle:ghumle@localhost:5432/ghumle',
+});
+const prisma = new PrismaClient({
+  adapter: new PrismaPg(pool),
+});
 
 async function main() {
   await prisma.auditLog.deleteMany();
@@ -323,4 +335,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
