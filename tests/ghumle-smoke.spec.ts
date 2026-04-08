@@ -17,6 +17,8 @@ async function expectOk(response: Awaited<ReturnType<import('@playwright/test').
 }
 
 test.describe.serial('Ghumle phase 1 smoke coverage', () => {
+  test.setTimeout(120_000);
+
   test('API modules support public, authenticated, and admin flows', async () => {
     const api = await playwrightRequest.newContext({
       baseURL: apiBaseUrl,
@@ -307,11 +309,21 @@ test.describe.serial('Ghumle phase 1 smoke coverage', () => {
     await page.getByLabel('Password').fill('Password@123');
     await page.getByRole('button', { name: 'Login' }).click();
     await page.waitForURL('**/profile');
+    await expect(page.getByRole('button', { name: 'Continue planning' }).first()).toBeVisible();
+    await page.getByRole('button', { name: 'Continue planning' }).first().click();
+    await page.waitForURL('**/planner');
+    await page.goto(`${webBaseUrl}/profile`, { waitUntil: 'networkidle' });
+    await expect(page.getByText('Demo Traveler', { exact: true })).toBeVisible();
     const loggedInEmail = await page.evaluate(() => {
       const session = window.localStorage.getItem('ghumle.auth');
       return session ? JSON.parse(session).user.email : null;
     });
     expect(loggedInEmail).toBe('traveler@ghumle.app');
+
+    await page.goto(`${webBaseUrl}/signup`, { waitUntil: 'networkidle' });
+    await page.waitForURL('**/planner');
+    await page.getByRole('button', { name: 'Logout' }).first().click();
+    await page.waitForURL('**/login');
 
     const signupEmail = `ui-smoke-${Date.now()}@ghumle.app`;
     await page.goto(`${webBaseUrl}/signup`, { waitUntil: 'networkidle' });

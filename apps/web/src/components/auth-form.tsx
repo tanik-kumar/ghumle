@@ -1,9 +1,13 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useState } from 'react';
+import Link from 'next/link';
+import { type FormEvent, useEffect, useState } from 'react';
 
 import { Button } from '@ghumle/ui';
+
+import { getDisplayName, saveAuthSession } from '../lib/auth';
+import { useAuthSession } from '../lib/use-auth-session';
 
 type AuthMode = 'login' | 'signup';
 
@@ -48,11 +52,20 @@ function getApiErrorMessage(payload: unknown, fallback: string) {
 
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const { session, isHydrated } = useAuthSession();
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
   const [error, setError] = useState<string | null>(null);
 
   const isSignup = mode === 'signup';
   const isSubmitting = status === 'submitting';
+
+  useEffect(() => {
+    if (!isHydrated || !session || status !== 'idle') {
+      return;
+    }
+
+    router.replace('/planner');
+  }, [isHydrated, router, session, status]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -80,16 +93,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       const authPayload = payload as AuthResponse;
-      window.localStorage.setItem(
-        'ghumle.auth',
-        JSON.stringify({
-          user: authPayload.user,
-          tokens: authPayload.tokens,
-          savedAt: new Date().toISOString(),
-        }),
-      );
-      window.localStorage.setItem('ghumle.accessToken', authPayload.tokens.accessToken);
-      window.localStorage.setItem('ghumle.refreshToken', authPayload.tokens.refreshToken);
+      saveAuthSession({
+        user: authPayload.user,
+        tokens: authPayload.tokens,
+        savedAt: new Date().toISOString(),
+      });
 
       setStatus('success');
       router.push('/profile');
@@ -98,6 +106,24 @@ export function AuthForm({ mode }: AuthFormProps) {
       setStatus('idle');
       setError(caughtError instanceof Error ? caughtError.message : 'Something went wrong. Please try again.');
     }
+  }
+
+  if (isHydrated && session) {
+    return (
+      <div className="space-y-4">
+        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          You are already signed in as <span className="font-semibold">{getDisplayName(session.user)}</span>.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/planner">
+            <Button>Continue planning</Button>
+          </Link>
+          <Link href="/profile">
+            <Button variant="secondary">Open profile</Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
