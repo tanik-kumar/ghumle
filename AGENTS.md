@@ -73,6 +73,12 @@ Full build:
 npm run build
 ```
 
+Smoke test web and API flows:
+
+```bash
+npm run test:smoke
+```
+
 ## Full local stack
 
 If Docker is available:
@@ -92,6 +98,7 @@ Previously verified in this repo:
 - `npm run lint --workspace @ghumle/api`
 - `npm run lint --workspace @ghumle/web`
 - `npm run build`
+- `npm run test:smoke`
 
 ## Recent repository housekeeping
 

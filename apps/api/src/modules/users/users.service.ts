@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { AuditService } from '../../common/audit/audit.service';
+import { sanitizeUser } from '../../common/security/sanitize-user';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UsersRepository } from './repositories/users.repository';
 
@@ -18,7 +19,7 @@ export class UsersService {
       throw new NotFoundException('User not found.');
     }
 
-    return user;
+    return sanitizeUser(user);
   }
 
   async updateCurrentUser(userId: string, dto: UpdateProfileDto) {

@@ -142,6 +142,7 @@ The Prisma schema includes the following core entities:
 
 - `npm run dev`
 - `npm run build`
+- `npm run test:smoke`
 - `npm run db:generate`
 - `npm run db:migrate`
 - `npm run db:seed`

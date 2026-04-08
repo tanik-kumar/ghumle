@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 
 import { AuditService } from '../../common/audit/audit.service';
 import type { AuthenticatedUser } from '../../common/security/current-user.decorator';
+import { sanitizeUser } from '../../common/security/sanitize-user';
 import { UsersRepository } from '../users/repositories/users.repository';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -40,7 +41,7 @@ export class AuthService {
     await this.auditService.log(user.id, 'auth.registered', 'User', user.id);
 
     return {
-      user,
+      user: sanitizeUser(user),
       tokens,
     };
   }
@@ -68,7 +69,7 @@ export class AuthService {
     await this.auditService.log(user.id, 'auth.logged-in', 'User', user.id);
 
     return {
-      user,
+      user: sanitizeUser(user),
       tokens,
     };
   }
@@ -99,13 +100,14 @@ export class AuthService {
     await this.usersRepository.setRefreshTokenHash(user.id, await bcrypt.hash(tokens.refreshToken, 10));
 
     return {
-      user,
+      user: sanitizeUser(user),
       tokens,
     };
   }
 
   async me(userId: string) {
-    return this.usersRepository.findById(userId);
+    const user = await this.usersRepository.findById(userId);
+    return user ? sanitizeUser(user) : null;
   }
 
   private async createTokens(payload: AuthenticatedUser) {
